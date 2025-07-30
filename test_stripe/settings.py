@@ -28,7 +28,7 @@ SECRET_KEY = "django-insecure-k96qjr@cj0&^us(bgjy-_=*y6_px*e6=pdim!mk(k-cvo()@!f
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'test-stripe-a0dv.onrender.com'
+    'test-stripe-egd7.onrender.com'
 ]
 
 
