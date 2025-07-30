@@ -137,10 +137,13 @@ def render_order(request):
 def result_payment(request):
     """Результат оплаты: success/cancel"""
     success = request.GET.get('success')
+    cancel = request.GET.get('cancel')
 
     if success:
         return render(request, 'success_payment.html')
-    return render(request, 'cancel_payment.html')
+    elif cancel:
+        return render(request, 'cancel_payment.html')
+    return render(request, 'welcome_page.html')
 
 
 @csrf_exempt
