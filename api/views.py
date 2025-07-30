@@ -12,6 +12,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 def buy_item(request, item_id):
+    """Получение Stripe Session ID для оплаты товаров"""
     item = get_object_or_404(Item, id=item_id)
 
     session = stripe.checkout.Session.create(
@@ -33,6 +34,7 @@ def buy_item(request, item_id):
 
 
 def item_detail(request, item_id):
+    """Просмотр конкретного товара и его покупка по кнопке Buy"""
     item = get_object_or_404(Item, id=item_id)
     return render(request, 'item_detail.html', {
         'item': item,
@@ -41,6 +43,7 @@ def item_detail(request, item_id):
 
 
 def buy_order(request, order_id):
+    """Получение Stripe Session ID для оплаты заказа"""
     order = get_object_or_404(Order, id=order_id)
     line_items = []
 
@@ -73,6 +76,7 @@ def buy_order(request, order_id):
 @csrf_exempt
 @require_POST
 def payment_intent(request, item_id):
+    """Оплата с помощью Intent"""
     item = get_object_or_404(Item, id=item_id)
 
     intent = stripe.PaymentIntent.create(
@@ -85,6 +89,7 @@ def payment_intent(request, item_id):
 
 
 def payment_intent_page(request, item_id):
+    """Страница для оплаты с помощью Intent"""
     item = get_object_or_404(Item, id=item_id)
     return render(request, 'payment_intent.html', {
         'item': item,
@@ -94,6 +99,7 @@ def payment_intent_page(request, item_id):
 @csrf_exempt
 @require_http_methods(['POST'])
 def create_order(request):
+    """Создание заказа"""
     order = Order.objects.create()
     return JsonResponse({"order_id": order.id})
 
@@ -101,6 +107,7 @@ def create_order(request):
 @csrf_exempt
 @require_http_methods(['POST'])
 def add_item_to_cart(request, item_id, order_id):
+    """Добавление товара в корзину"""
     order = get_object_or_404(Order, id=order_id)
     item = get_object_or_404(Item, id=item_id)
     order.items.add(item)
@@ -108,12 +115,14 @@ def add_item_to_cart(request, item_id, order_id):
 
 
 def view_order(request, order_id):
+    """Просмотр заказа"""
     order = get_object_or_404(Order, id=order_id)
     items = [{"name": i.name, "price": float(i.price)} for i in order.items.all()]
     return JsonResponse({"order_id": order.id, "items": items})
 
 
 def render_order(request):
+    """Страница для составления и оплаты заказа"""
     items = Item.objects.all()
     discounts = Discount.objects.all()
     tax = Tax.objects.all()
@@ -126,6 +135,7 @@ def render_order(request):
 
 
 def result_payment(request):
+    """Результат оплаты: success/cancel"""
     success = request.GET.get('success')
 
     if success:
@@ -136,6 +146,7 @@ def result_payment(request):
 @csrf_exempt
 @require_http_methods(['POST'])
 def add_discount_to_order(request, order_id, discount_id):
+    """Добавление скидки к заказу"""
     order = get_object_or_404(Order, id=order_id)
     discount = get_object_or_404(Discount, id=discount_id)
     order.discount.add(discount)
@@ -145,6 +156,7 @@ def add_discount_to_order(request, order_id, discount_id):
 @csrf_exempt
 @require_http_methods(['POST'])
 def add_tax_to_order(request, order_id, tax_id):
+    """Добавление налога к заказу"""
     order = get_object_or_404(Order, id=order_id)
     tax = get_object_or_404(Tax, id=tax_id)
     order.tax.add(tax)
