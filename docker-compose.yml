@@ -1,16 +1,17 @@
+version: '3.8'
+
 services:
   web:
     build: .
     command: >
       sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+             gunicorn --bind 0.0.0.0:8000 test_stripe.wsgi:application"
     volumes:
-      - .:/code
-      - static_volume:/code/staticfile
-    ports:
-      - "8000:8000"
+      - static_volume:/app/staticfiles
     env_file:
       - .env
+    expose:
+      - 8000
 
   nginx:
     image: nginx:alpine
@@ -18,7 +19,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - static_volume:/code/staticfiles
+      - static_volume:/app/staticfiles
     depends_on:
       - web
 
