@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Корзина</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <h1>🛒 Корзина</h1>
+    <h2>Товары:</h2>
+    <ul id="items">
+        {% for item in items %}
+            <li>
+                {{ item.name }} - {{ item.price }} {{ item.currency }}
+                <button onclick="addToOrder({{ item.id }})">Добавить в заказ</button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Скидки</h2>
+    <ul id="discounts">
+        {% for discount in discounts %}
+            <li>
+                {{ discount.name }} - {{ discount.percent }}
+                <button onclick="addToOrder({{ discount.id }})">Применить скидку</button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Налоги</h2>
+    <ul id="tax">
+        {% for t in tax %}
+            <li>
+                {{ t.name }} - {{ t.percent }}
+                <button onclick="addToOrder({{ t.id }})">Применить налог</button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <hr>
+    <button onclick="createOrder()">Создать заказ</button>
+    <p id="order-info">Заказ не создан</p>
+
+    <h3>Текущий заказ:</h3>
+    <ul id="order-items"></ul>
+
+    <button id="pay-button" onclick="payOrder()" disabled>Оплатить заказ</button>
+
+    <script>
+        let orderId = null;
+
+        async function createOrder() {
+            const response = await fetch('/order/create/', { method: 'POST' });
+            const data = await response.json();
+            orderId = data.order_id;
+            document.getElementById('order-info').textContent = `Заказ №${orderId} создан`;
+            loadOrder();
+        }
+
+        async function addToOrder(itemId) {
+            if (!orderId) {
+                alert("Сначала создайте заказ!");
+                return;
+            }
+            await fetch(`/order/${orderId}/add/${itemId}/`, { method: 'POST' });
+            loadOrder();
+        }
+
+        async function addDiscountToOrder(discountId) {
+            if (!orderId) {
+                alert("Сначала создайте заказ!");
+                return;
+            }
+            await fetch(`/order/${orderId}/add-discount/${discountId}/`, { method: 'POST' });
+            loadOrder();
+        }
+
+        async function addTaxToOrder(taxId) {
+            if (!orderId) {
+                alert("Сначала создайте заказ!");
+                return;
+            }
+            await fetch(`/order/${orderId}/add-tax/${taxId}/`, { method: 'POST' });
+            loadOrder();
+        }
+
+        async function loadOrder() {
+            if (!orderId) return;
+            const response = await fetch(`/order/${orderId}/`);
+            const data = await response.json();
+
+            const orderItems = document.getElementById('order-items');
+            orderItems.innerHTML = '';
+            data.items.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = `${item.name} - ${item.price}`;
+                orderItems.appendChild(li);
+            });
+
+            document.getElementById('pay-button').disabled = data.items.length === 0;
+        }
+
+        async function payOrder() {
+            const response = await fetch(`/buy-order/${orderId}/`);
+            if (!response.ok) {
+                alert("Ошибка при создании сессии оплаты");
+                return;
+            }
+            const data = await response.json();
+            const stripe = Stripe("{{ public_key }}");
+            const result = await stripe.redirectToCheckout({ sessionId: data.session_id });
+            if (result.error) {
+                alert(result.error.message);
+            }
+        }
+
+    </script>
+</body>
+</html>

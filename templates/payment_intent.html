@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ item.name }} - Pay</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <h1>{{ item.name }}</h1>
+    <p>{{ item.description }}</p>
+    <h3>Price: {{ item.price }} {{ item.currency }}</h3>
+
+    <form id="payment-form">
+        <div id="card-element"></div>
+        <button type="submit" id="submit">Pay</button>
+    </form>
+
+    <p id="payment-status"></p>
+
+    <script>
+        const stripe = Stripe('{{ public_key }}');
+        const elements = stripe.elements();
+        const card = elements.create('card');
+        card.mount('#card-element');
+
+        const form = document.getElementById('payment-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const response = await fetch(`/payment-intent/{{ item.id }}/`, { method: 'POST' });
+            const { client_secret } = await response.json();
+
+            const result = await stripe.confirmCardPayment(client_secret, {
+                payment_method: { card: card }
+            });
+
+            if (result.error) {
+                document.getElementById('payment-status').textContent = result.error.message;
+            } else if (result.paymentIntent.status === 'succeeded') {
+                document.getElementById('payment-status').textContent = 'Payment successful!';
+            }
+        });
+    </script>
+</body>
+</html>
