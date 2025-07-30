@@ -10,4 +10,6 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
+RUN mkdir -p /code/staticfiles
+
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "test_stripe.wsgi:application"]
